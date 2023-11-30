@@ -1,0 +1,23 @@
+.wrapper {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toast {
+  display: none;
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  z-index: 9999;
+  transform: translateX(-50%);
+  width: 150px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  background-color: aqua;
+  border-radius: 16px;
+  font-size: 16px;
+}
