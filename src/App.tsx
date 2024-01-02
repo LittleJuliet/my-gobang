@@ -3,7 +3,7 @@ import './App.scss';
 import {useMount, useUpdateEffect} from "ahooks";
 
 function App() {
-  const [board, setBoard] = useState(Array(20).fill(Array(20).fill(null)));
+  const [board, setBoard] = useState(Array(15).fill(Array(15).fill(null)));
   const canvasRef = React.createRef<HTMLCanvasElement>();
   const toastRef = React.createRef<HTMLDivElement>();
   const isFinish = useRef<string | null>(null);
@@ -35,29 +35,29 @@ function App() {
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
 
-    canvasRef.current.width = 600 * devicePixelRatio.current;
-    canvasRef.current.height = 600 * devicePixelRatio.current;
-    canvasRef.current.style.width = '600px';
-    canvasRef.current.style.height = '600px';
+    canvasRef.current.width = 450 * devicePixelRatio.current;
+    canvasRef.current.height = 450 * devicePixelRatio.current;
+    canvasRef.current.style.width = '450px';
+    canvasRef.current.style.height = '450px';
     ctx.scale(devicePixelRatio.current, devicePixelRatio.current);
 
     // 绘制棋盘背景
     ctx.fillStyle = 'yellow';
-    ctx.fillRect(0, 0, 600, 600);
+    ctx.fillRect(0, 0, 450, 450);
 
     // 绘制网格线
     ctx.strokeStyle = 'black';
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 15; i++) {
       // 绘制横线
       ctx.beginPath();
       ctx.moveTo(15, i * 30 + 15);
-      ctx.lineTo(585, i * 30 + 15);
+      ctx.lineTo(435, i * 30 + 15);
       ctx.stroke();
 
       // 绘制竖线
       ctx.beginPath();
       ctx.moveTo(i * 30 + 15, 15);
-      ctx.lineTo(i * 30 + 15, 585);
+      ctx.lineTo(i * 30 + 15, 435);
       ctx.stroke();
     }
   }, []);
@@ -68,8 +68,8 @@ function App() {
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
 
-    for (let i = 0; i < 20; i++) {
-      for (let j = 0; j < 20; j++) {
+    for (let i = 0; i < 15; i++) {
+      for (let j = 0; j < 15; j++) {
         const drawPiece = (color: 'white' | 'black') => {
           ctx.beginPath();
           ctx.arc(j * 30 + 15, i * 30 + 15, 13, 0, 2 * Math.PI);
@@ -137,8 +137,7 @@ function App() {
   }, []);
 
   const computerMove = useCallback((newBoard: Array<Array<string | null>>) => {
-    const rows = newBoard.length;
-    const cols = newBoard[0].length;
+    const rows = 15, cols = 15;
     let bestScore = -Infinity;
     let bestMove = null;
 
@@ -274,15 +273,15 @@ function App() {
     let x = 0, y = 0;
     if (e.clientX - rect.left < 15) {
       x = 0;
-    } else if (e.clientX - rect.left > 585) {
-      x = 19
+    } else if (e.clientX - rect.left > 435) {
+      x = 14
     } else {
       x = Math.round((e.clientX - rect.left - 15) / 30);
     }
     if (e.clientY - rect.top < 15) {
       y = 0;
-    } else if (e.clientY - rect.top > 585) {
-      y = 19;
+    } else if (e.clientY - rect.top > 435) {
+      y = 14;
     } else {
       y = Math.round((e.clientY - rect.top - 15) / 30);
     }
@@ -307,8 +306,8 @@ function App() {
       </div>
       <canvas
           ref={canvasRef}
-          width={600}
-          height={600}
+          width={450}
+          height={450}
           onClick={(e) => {
             // @ts-ignore
             playerClickHandler(e as MouseEvent);
