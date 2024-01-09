@@ -3,16 +3,14 @@ import './App.scss';
 import { useMount, useUpdateEffect } from 'ahooks';
 import { SCORE_ENUM } from './utils/constant';
 import { Model } from './utils/utils';
+import { cloneDeep } from 'lodash';
 
 const SIZE = 15;
 
 function App() {
-    const [board, setBoard] = useState<Array<Array<number>>>(
-        Array(15).fill(Array(15).fill(0)),
-    );
+    const [board, setBoard] = useState<Array<Array<number>>>(Array(15).fill(Array(15).fill(0)));
     const canvasRef = React.createRef<HTMLCanvasElement>();
-    const toastRef = React.createRef<HTMLDivElement>();
-    const isBlack = useRef<1 | 2>(1);
+    // const isBlack = useRef<1 | 2>(1);
     const isFinish = useRef<number | null>(null);
     const devicePixelRatio = useRef(window.devicePixelRatio ?? 1);
     const pieceColor = useRef({
@@ -25,7 +23,7 @@ function App() {
      */
     const handleClick = (row: number, col: number) => {
         if (board[row][col] === 0) {
-            const newBoard = board.map((row) => row.slice());
+            const newBoard = JSON.parse(JSON.stringify(board));
             newBoard[row][col] = 1;
             setBoard(newBoard);
             isFinish.current = checkWinner(newBoard, row, col, 1);
@@ -79,22 +77,10 @@ function App() {
     /**
      * 落子
      */
-    const drawPiece = (
-        ctx: CanvasRenderingContext2D,
-        i: number,
-        j: number,
-        color: 1 | 2,
-    ) => {
+    const drawPiece = (ctx: CanvasRenderingContext2D, i: number, j: number, color: 1 | 2) => {
         ctx.beginPath();
         ctx.arc(j * 30 + 15, i * 30 + 15, 13, 0, 2 * Math.PI);
-        const gradient = ctx.createRadialGradient(
-            j * 30 + 15,
-            i * 30 + 15,
-            13,
-            j * 30 + 15,
-            i * 30 + 15,
-            0,
-        );
+        const gradient = ctx.createRadialGradient(j * 30 + 15, i * 30 + 15, 13, j * 30 + 15, i * 30 + 15, 0);
         gradient.addColorStop(0, pieceColor.current[color][0]);
         gradient.addColorStop(1, pieceColor.current[color][1]);
         ctx.fillStyle = gradient;
@@ -124,12 +110,7 @@ function App() {
     /**
      * 判断是否有胜利者产生
      */
-    const checkWinner = (
-        newBoard: Array<Array<number>>,
-        row: number,
-        col: number,
-        color: 1 | 2,
-    ) => {
+    const checkWinner = (newBoard: Array<Array<number>>, row: number, col: number, color: 1 | 2) => {
         const directions = [
             [0, 1], // 横向
             [1, 0], // 纵向
@@ -202,7 +183,6 @@ function App() {
         direction: number,
         offset: number,
     ) => {
-        newBoard = JSON.parse(JSON.stringify(newBoard));
         let { row, col } = point;
         switch (direction) {
             case 1:
@@ -258,7 +238,6 @@ function App() {
         direction: number,
         offset: number,
     ) => {
-        newBoard = JSON.parse(JSON.stringify(newBoard));
         let piece = relativePoint(newBoard, point, direction, offset);
         if (piece > -1) {
             // 如果是黑棋, 需要对黑棋和白棋进行转换, 因为评估枚举是根据白棋设定的
@@ -276,7 +255,7 @@ function App() {
      * 获取当前局势
      * @param newBoard 当前棋盘
      * @param point 当前棋子坐标
-     * @param direction 方向 1-左横 2-右横 3-上竖 4-下竖 5-左上斜 6-左下斜 7-右上斜 8-右下斜
+     * @param direction 方向 1-横 2-竖 3-左斜 4-右斜
      * @param color 当前棋子颜色
      * @returns {string} 当前局势
      */
@@ -286,7 +265,6 @@ function App() {
         direction: number,
         color: 1 | 2,
     ) => {
-        newBoard = JSON.parse(JSON.stringify(newBoard));
         direction = direction * 2 - 1;
         let str = '';
         str = appendPiece(newBoard, str, point, color, direction, 4);
@@ -305,12 +283,14 @@ function App() {
      * 获取当前局势的分数
      */
     const getScore = (situation: string) => {
-        Object.keys(SCORE_ENUM).forEach((key) => {
-            if (situation.includes(key)) {
+        const keyList = Object.keys(SCORE_ENUM);
+        for (let i = 0; i < keyList.length; i++) {
+            const key = keyList[i];
+            if (Object.prototype.hasOwnProperty.call(SCORE_ENUM, key) && situation.includes(key)) {
                 // @ts-ignore
                 return SCORE_ENUM[key];
             }
-        });
+        }
         return 0;
     };
 
@@ -321,18 +301,14 @@ function App() {
     /**
      * 计算电脑落子得分情况
      */
-    const evaluate = (
-        newBoard: Array<Array<number>>,
-        point: { row: number; col: number },
-        color: 1 | 2,
-    ) => {
-        newBoard = JSON.parse(JSON.stringify(newBoard));
+    const evaluate = (newBoard: Array<Array<number>>, point: { row: number; col: number }, color: 1 | 2) => {
         let score = 0;
         let huosanTotal = 0;
         let chongsiTotal = 0;
         let huoerTotal = 0;
         for (let i = 1; i < 5; i++) {
             const situation = getSituation(newBoard, point, i, color);
+            score += getScore(situation);
 
             if (
                 checkSituation(situation, '002220') ||
@@ -356,21 +332,19 @@ function App() {
             ) {
                 huoerTotal++;
             }
+        }
 
-            score += getScore(situation);
-
-            if (huosanTotal > 0 && huoerTotal > 0) {
-                score *= 2;
-            }
-            if (chongsiTotal > 0 && huoerTotal > 0) {
-                score *= 4;
-            }
-            if (huosanTotal > 1) {
-                score *= 6;
-            }
-            if (chongsiTotal > 0 && huosanTotal > 0) {
-                score *= 8;
-            }
+        if (huosanTotal > 0 && huoerTotal > 0) {
+            score *= 2;
+        }
+        if (chongsiTotal > 0 && huoerTotal > 0) {
+            score *= 4;
+        }
+        if (huosanTotal > 1) {
+            score *= 6;
+        }
+        if (chongsiTotal > 0 && huosanTotal > 0) {
+            score *= 8;
         }
         return score;
     };
@@ -379,15 +353,14 @@ function App() {
      * 电脑落子
      */
     const computerMove = (newBoard: Array<Array<number>>) => {
-        newBoard = JSON.parse(JSON.stringify(newBoard));
         let bestMove = { row: -1, col: -1, score: -Infinity };
 
         for (let i = 0; i < SIZE; i++) {
             for (let j = 0; j < SIZE; j++) {
                 if (!newBoard[i][j]) {
-                    const score =
-                        evaluate(newBoard, { row: i, col: j }, 2) +
-                        evaluate(newBoard, { row: i, col: j }, 1);
+                    const scoreWhite = evaluate(newBoard, { row: i, col: j }, 2);
+                    const scoreBlack = evaluate(newBoard, { row: i, col: j }, 1);
+                    const score = scoreWhite + scoreBlack;
                     if (score > bestMove.score) {
                         bestMove = { row: i, col: j, score };
                     }
@@ -399,12 +372,7 @@ function App() {
         if (bestMove) {
             newBoard[bestMove.row][bestMove.col] = 2;
             setBoard(newBoard);
-            isFinish.current = checkWinner(
-                newBoard,
-                bestMove.row,
-                bestMove.col,
-                2,
-            );
+            isFinish.current = checkWinner(newBoard, bestMove.row, bestMove.col, 2);
             if (isFinish.current) {
                 Model({
                     content: `${isFinish.current === 1 ? '黑方' : '白方'}获胜`,
