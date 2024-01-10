@@ -3,7 +3,6 @@ import './App.scss';
 import { useMount, useUpdateEffect } from 'ahooks';
 import { SCORE_ENUM } from './utils/constant';
 import { Model } from './utils/utils';
-import { cloneDeep } from 'lodash';
 
 const SIZE = 15;
 
@@ -283,12 +282,12 @@ function App() {
      * 获取当前局势的分数
      */
     const getScore = (situation: string) => {
-        const keyList = Object.keys(SCORE_ENUM);
+        const keyList = Array.from(SCORE_ENUM.keys());
         for (let i = 0; i < keyList.length; i++) {
             const key = keyList[i];
-            if (Object.prototype.hasOwnProperty.call(SCORE_ENUM, key) && situation.includes(key)) {
+            if (situation.includes(key)) {
                 // @ts-ignore
-                return SCORE_ENUM[key];
+                return SCORE_ENUM.get(key);
             }
         }
         return 0;
@@ -346,6 +345,7 @@ function App() {
         if (chongsiTotal > 0 && huosanTotal > 0) {
             score *= 8;
         }
+
         return score;
     };
 
